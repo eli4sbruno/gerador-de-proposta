@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Proposta Comercial Estratégica - Elias Bruno</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;0,900;1,300;1,400;1,700;1,900&family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Montserrat', 'sans-serif'],
+                        serif: ['Merriweather', 'serif'],
+                    },
+                    colors: {
+                        brand: {
+                            navy: '#102540',
+                            gold: '#E6CFA0',
+                            parchment: '#FDF9F2',
+                            dusty: '#3C5A85',
+                            azure: '#64A0BF',
+                            copper: '#D9B38C',
+                            black: '#1A1A1A',
+                            grey: '#D1CDCB',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background-color: #f3f4f6;
+            background-image: radial-gradient(#D1CDCB 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+
+        h1, h2, h3, h4, h5, h6, .font-serif {
+            font-family: 'Merriweather', serif !important;
+        }
+
+        .editable-active [contenteditable="true"] {
+            background-color: rgba(230, 207, 160, 0.2);
+            border-bottom: 1px dashed #E6CFA0;
+            outline: none;
+            transition: all 0.2s;
+        }
+
+        .editable-active [contenteditable="true"]:focus {
+            background-color: rgba(230, 207, 160, 0.4);
+            border-bottom: 1px solid #D9B38C;
+        }
+
+        /* Painel de módulos */
+        #modulePanel {
+            transform: translateX(100%);
+            transition: transform 0.25s ease-in-out;
+        }
+        #modulePanel.open {
+            transform: translateX(0);
+        }
+        .module-item.disabled-row {
+            opacity: 0.5;
+            pointer-events: none;
+        }
+        [data-module].module-hidden {
+            display: none !important;
+        }
+
+        @media print {
+            body {
+                background: white;
+                margin: 0;
+                padding: 0;
+            }
+            .no-print {
+                display: none !important;
+            }
+            .print-container {
+                box-shadow: none !important;
+                margin: 0 !important;
+                padding: 1cm 2cm !important;
+                max-width: 100% !important;
+            }
+            .page-break-before {
+                page-break-before: always;
+            }
+            .page-break-inside-avoid {
+                page-break-inside: avoid;
+            }
+        }
+    </style>
+</head>
+<body class="text-brand-black antialiased font-sans flex flex-col items-center min-h-screen pb-20">
+
+    <!-- BARRA SUPERIOR -->
+    <div class="no-print fixed top-0 w-full bg-brand-navy text-white p-4 shadow-lg z-50 flex justify-between items-center px-8">
+        <div class="flex items-center gap-3">
+            <i data-lucide="file-signature" class="text-brand-gold"></i>
+            <span class="font-semibold tracking-wide text-brand-parchment">Gerador de Propostas</span>
+        </div>
+        <div class="flex gap-3">
+            <button id="toggleModulesBtn" onclick="toggleModulePanel()" class="flex items-center gap-2 bg-brand-copper text-brand-navy hover:brightness-110 px-4 py-2 rounded transition-colors text-sm font-bold shadow">
+                <i data-lucide="sliders-horizontal" class="w-4 h-4"></i>
+                Configurar Módulos
+            </button>
+            <button id="toggleEditBtn" onclick="toggleEditMode()" class="flex items-center gap-2 bg-brand-dusty hover:bg-brand-navy px-4 py-2 rounded transition-colors text-sm font-medium border border-brand-dusty">
+                <i data-lucide="edit-3" class="w-4 h-4"></i>
+                <span id="editBtnText">Ativar Edição</span>
+            </button>
+            <button onclick="window.print()" class="flex items-center gap-2 bg-brand-gold text-brand-navy hover:bg-brand-copper hover:text-white px-4 py-2 rounded transition-colors text-sm font-bold shadow-lg">
+                <i data-lucide="printer" class="w-4 h-4"></i>
+                Salvar PDF
+            </button>
+        </div>
+    </div>
+
+    <!-- PAINEL LATERAL DE MÓDULOS -->
+    <aside id="modulePanel" class="no-print fixed top-0 right-0 h-full w-full sm:w-[380px] bg-white shadow-2xl z-50 overflow-y-auto pt-20 pb-8 border-l border-brand-grey">
+        <div class="px-6">
+            <div class="flex items-center justify-between mb-2">
+                <h2 class="font-serif font-bold text-brand-navy text-lg">Módulos da Proposta</h2>
+                <button onclick="toggleModulePanel()" class="text-brand-dusty hover:text-brand-navy">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <p class="text-xs text-brand-dusty mb-6">Marque ou desmarque os serviços. O documento, a tabela de opções e os totais são recalculados automaticamente.</p>
+
+            <!-- Resumo dinâmico -->
+            <div class="bg-brand-navy text-brand-parchment rounded-lg p-4 mb-6 shadow">
+                <p class="text-[10px] uppercase tracking-wider text-brand-gold font-bold mb-2 font-serif">Resumo do Investimento</p>
+                <div class="grid grid-cols-3 gap-2 text-center mb-3">
+                    <div>
+                        <p class="text-[10px] text-brand-grey">Essencial</p>
+                        <p id="summaryEssencial" class="font-bold text-sm">R$ 0</p>
+                    </div>
+                    <div class="border-x border-brand-dusty/50">
+                        <p class="text-[10px] text-brand-gold">Estratégica</p>
+                        <p id="summaryEstrategica" class="font-bold text-sm text-brand-gold">R$ 0</p>
+                    </div>
+                    <div>
+                        <p class="text-[10px] text-brand-grey">Dominância</p>
+                        <p id="summaryDominancia" class="font-bold text-sm">R$ 0</p>
+                    </div>
+                </div>
+                <div class="pt-2 border-t border-brand-dusty/40 flex justify-between items-center">
+                    <span class="text-[10px] text-brand-grey uppercase tracking-wide">Mensalidade de gestão</span>
+                    <span id="summaryMensal" class="font-bold text-sm text-brand-copper">R$ 0/mês</span>
+                </div>
+            </div>
+
+            <!-- Grupo: Implantação -->
+            <p class="text-xs font-bold uppercase tracking-wider text-brand-navy mb-3 flex items-center gap-2">
+                <i data-lucide="package" class="w-4 h-4 text-brand-gold"></i> Implantação (pagamento único)
+            </p>
+            <div class="space-y-3 mb-8" id="setupModulesList">
+                <label class="module-item flex items-start gap-3 p-3 rounded-lg border border-brand-grey/60 bg-brand-parchment/40 disabled-row">
+                    <input type="checkbox" checked disabled class="mt-1 accent-brand-navy w-4 h-4">
+                    <span class="text-sm text-brand-black">
+                        <strong class="text-brand-navy block">Núcleo de Branding</strong>
+                        Diagnóstico, identidade visual, estratégia e brandbook. Módulo obrigatório.
+                    </span>
+                </label>
+                <label class="module-item flex items-start gap-3 p-3 rounded-lg border border-brand-grey/60 hover:bg-brand-parchment/40 cursor-pointer">
+                    <input type="checkbox" onchange="toggleModule('papelaria', this.checked)" class="mt-1 accent-brand-navy w-4 h-4">
+                    <span class="text-sm text-brand-black">
+                        <strong class="text-brand-navy block">Kit Papelaria Física <span class="text-[10px] text-brand-dusty font-normal">(fase 2)</span></strong>
+                        Cartão de visita, pasta comercial, papel timbrado.
+                    </span>
+                </label>
+                <label class="module-item flex items-start gap-3 p-3 rounded-lg border border-brand-grey/60 hover:bg-brand-parchment/40 cursor-pointer">
+                    <input type="checkbox" checked onchange="toggleModule('social_setup', this.checked)" class="mt-1 accent-brand-navy w-4 h-4">
+                    <span class="text-sm text-brand-black">
+                        <strong class="text-brand-navy block">Perfis Instagram/Facebook + Artes</strong>
+                        Criação dos perfis, bio, destaques e kit de templates de posts.
+                    </span>
+                </label>
+                <label class="module-item flex items-start gap-3 p-3 rounded-lg border border-brand-grey/60 hover:bg-brand-parchment/40 cursor-pointer">
+                    <input type="checkbox" checked onchange="toggleModule('gmb', this.checked)" class="mt-1 accent-brand-navy w-4 h-4">
+                    <span class="text-sm text-brand-black">
+                        <strong class="text-brand-navy block">Google Meu Negócio</strong>
+                        Criação e otimização da ficha (SEO local, fotos, categoria).
+                    </span>
+                </label>
+                <label class="module-item flex items-start gap-3 p-3 rounded-lg border border-brand-grey/60 hover:bg-brand-parchment/40 cursor-pointer">
+                    <input type="checkbox" checked onchange="toggleModule('landing_page', this.checked)" class="mt-1 accent-brand-navy w-4 h-4">
+                    <span class="text-sm text-brand-black">
+                        <strong class="text-brand-navy block">Landing Page</strong>
+                        Site de 1 página com banners, copy e publicação.
+                    </span>
+                </label>
+                <label class="module-item flex items-start gap-3 p-3 rounded-lg border border-dashed border-brand-copper/60 hover:bg-brand-parchment/40 cursor-pointer">
+                    <input type="checkbox" onchange="toggleModule('website_institucional', this.checked)" class="mt-1 accent-brand-navy w-4 h-4">
+                    <span class="text-sm text-brand-black">
+                        <strong class="text-brand-navy block">Website Institucional (upsell)</strong>
+                        Site multipáginas — upgrade opcional da Landing Page. Desativado por padrão.
+                    </span>
+                </label>
+            </div>
+
+            <!-- Grupo: Gestão Mensal -->
+            <p class="text-xs font-bold uppercase tracking-wider text-brand-navy mb-3 flex items-center gap-2">
+                <i data-lucide="repeat" class="w-4 h-4 text-brand-gold"></i> Gestão Recorrente (mensal)
+            </p>
+            <div class="space-y-3 mb-6" id="monthlyModulesList">
+                <label class="module-item flex items-start gap-3 p-3 rounded-lg border border-brand-grey/60 hover:bg-brand-parchment/40 cursor-pointer">
+                    <input type="checkbox" checked onchange="toggleModule('gestao_redes', this.checked)" class="mt-1 accent-brand-navy w-4 h-4">
+                    <span class="text-sm text-brand-black">
+                        <strong class="text-brand-navy block">Gestão de Redes Sociais</strong>
+                        Postagens mensais + artes + relatório de desempenho.
+                    </span>
+                </label>
+                <label class="module-item flex items-start gap-3 p-3 rounded-lg border border-brand-grey/60 hover:bg-brand-parchment/40 cursor-pointer">
+                    <input type="checkbox" checked onchange="toggleModule('trafego_google', this.checked)" class="mt-1 accent-brand-navy w-4 h-4">
+                    <span class="text-sm text-brand-black">
+                        <strong class="text-brand-navy block">Tráfego Pago — Google Ads</strong>
+                        Fee de gestão de campanhas de busca local.
+                    </span>
+                </label>
+                <label class="module-item flex items-start gap-3 p-3 rounded-lg border border-brand-grey/60 hover:bg-brand-parchment/40 cursor-pointer">
+                    <input type="checkbox" onchange="toggleModule('trafego_meta', this.checked)" class="mt-1 accent-brand-navy w-4 h-4">
+                    <span class="text-sm text-brand-black">
+                        <strong class="text-brand-navy block">Tráfego Pago — Meta Ads <span class="text-[10px] text-brand-dusty font-normal">(fase 2)</span></strong>
+                        Fee de gestão de campanhas Instagram/Facebook.
+                    </span>
+                </label>
+                <label class="module-item flex items-start gap-3 p-3 rounded-lg border-2 border-brand-gold bg-brand-gold/10 hover:bg-brand-gold/20 cursor-pointer">
+                    <input type="checkbox" checked onchange="toggleModule('ads_ia', this.checked)" class="mt-1 accent-brand-navy w-4 h-4">
+                    <span class="text-sm text-brand-black">
+                        <strong class="text-brand-navy block flex items-center gap-1">Ads de IA (ChatGPT Ads) <i data-lucide="sparkles" class="w-3 h-3 text-brand-copper"></i></strong>
+                        Diferencial pioneiro — canal novo e pouco concorrido no Brasil.
+                    </span>
+                </label>
+            </div>
+
+            <p class="text-[11px] text-brand-dusty leading-relaxed border-t border-brand-grey/50 pt-4">
+                As alterações valem apenas para esta sessão. Depois de configurar, use <strong>Ativar Edição</strong> para ajustar textos e valores, e <strong>Salvar PDF</strong> para gerar o arquivo final.
+            </p>
+        </div>
+    </aside>
+    <div id="panelOverlay" onclick="toggleModulePanel()" class="no-print fixed inset-0 bg-black/30 z-40 hidden"></div>
+
+    <main class="print-container w-full max-w-[210mm] bg-brand-parchment shadow-2xl mt-24 mb-12 relative overflow-hidden" id="proposalDocument">
+
+        <div class="h-2 w-full bg-brand-navy"></div>
+        <div class="h-1 w-full bg-brand-gold"></div>
+
+        <div class="p-12 md:p-16">
+
+            <header class="flex flex-col md:flex-row justify-between items-start mb-16 border-b border-brand-grey/50 pb-10 gap-8">
+                <div>
+                    <img src="logo.png" alt="Elias Branding & Design Logo" class="h-12 object-contain mb-2">
+                </div>
+                <div class="text-left md:text-right text-sm text-brand-dusty space-y-1">
+                    <p class="font-bold text-brand-navy text-base font-serif" contenteditable="false" data-editable>PROPOSTA COMERCIAL ESTRATÉGICA</p>
+                    <p>Código: <span contenteditable="false" data-editable>PROP-2026-0082</span></p>
+                    <p>Preparado por: <span contenteditable="false" data-editable>Elias Bruno Domingues Vieira</span></p>
+                    <div class="mt-4 pt-4 border-t border-brand-grey/50">
+                        <p>Para: <strong class="text-brand-navy" contenteditable="false" data-editable>Ravello</strong></p>
+                        <p>A/C: <span contenteditable="false" data-editable>Diego Marques</span></p>
+                        <p>Data: <span contenteditable="false" data-editable>15/08/2026</span></p>
+                        <p class="text-brand-copper font-bold">Validade: 7 dias corridos</p>
+                    </div>
+                </div>
+            </header>
+
+            <section class="mb-12 page-break-inside-avoid">
+                <h2 class="text-2xl font-serif font-bold text-brand-navy mb-4 flex items-center gap-3">
+                    <span class="text-brand-gold">1.</span> O Diagnóstico & O Desafio Estratégico
+                </h2>
+                <div class="text-brand-black leading-relaxed space-y-4 text-justify" contenteditable="false" data-editable>
+                    <p>Após uma análise preliminar, identificamos que a <strong class="text-brand-navy">Ravello</strong> ainda não possui presença digital estruturada — sem Google Meu Negócio, sem redes sociais e sem site — o que compromete a percepção de valor antes mesmo do primeiro contato com o cliente.</p>
+                </div>
+
+                <div class="mt-6 bg-white/60 p-6 rounded-lg border-l-4 border-brand-navy shadow-sm">
+                    <h3 class="font-bold text-brand-navy mb-4 uppercase tracking-wider text-sm font-serif">A Situação Atual vs. O Risco de Mercado</h3>
+                    <ul class="space-y-4 text-brand-black">
+                        <li class="flex items-start gap-3">
+                            <i data-lucide="x-circle" class="w-5 h-5 text-brand-copper shrink-0 mt-0.5"></i>
+                            <span contenteditable="false" data-editable><strong class="text-brand-navy">A Dor Principal:</strong> Sua entrega e produto possuem alto nível técnico, mas a ausência de presença digital e a apresentação visual ainda não transmitem a senioridade e autoridade do negócio.</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <i data-lucide="trending-down" class="w-5 h-5 text-brand-dusty shrink-0 mt-0.5"></i>
+                            <span contenteditable="false" data-editable><strong class="text-brand-navy">O Impacto:</strong> Marcas invisíveis ou com visual genérico caem na guerra de preços, perdendo clientes para concorrentes que apenas "aparecem primeiro" no Google e nas redes.</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <i data-lucide="target" class="w-5 h-5 text-brand-gold shrink-0 mt-0.5"></i>
+                            <span contenteditable="false" data-editable><strong class="text-brand-navy">A Oportunidade:</strong> Construir marca, presença digital e aquisição de clientes de uma só vez — incluindo um canal de anúncios ainda pouco explorado pela concorrência local.</span>
+                        </li>
+                    </ul>
+                </div>
+            </section>
+
+            <section class="mb-12 page-break-inside-avoid">
+                <h2 class="text-2xl font-serif font-bold text-brand-navy mb-4 flex items-center gap-3">
+                    <span class="text-brand-gold">2.</span> A Transformação Esperada
+                </h2>
+                <p class="text-brand-black mb-8" contenteditable="false" data-editable>Este projeto não é sobre "criar um logotipo bonitinho". É uma intervenção estratégica para reestruturar como o mercado enxerga e encontra o seu negócio.</p>
+
+                <div class="flex flex-col md:flex-row items-center justify-between gap-4 mb-8 bg-brand-navy text-brand-parchment p-6 rounded-xl shadow-lg border border-brand-dusty/30">
+                    <div class="text-center p-4">
+                        <p class="text-brand-grey text-sm uppercase tracking-wider mb-2 font-serif">Estado Atual</p>
+                        <p class="font-semibold text-brand-parchment" contenteditable="false" data-editable>Sem presença digital<br>Marca invisível</p>
+                    </div>
+                    <div class="text-brand-gold flex flex-col items-center">
+                        <i data-lucide="arrow-right-circle" class="w-8 h-8 mb-2 hidden md:block text-brand-gold"></i>
+                        <i data-lucide="arrow-down-circle" class="w-8 h-8 mb-2 block md:hidden text-brand-gold"></i>
+                        <span class="text-xs font-bold uppercase tracking-widest text-center text-brand-copper" contenteditable="false" data-editable>Marca + Presença Digital<br>+ Aquisição</span>
+                    </div>
+                    <div class="text-center p-4 bg-brand-gold rounded-lg shadow-inner">
+                        <p class="text-brand-navy text-sm uppercase tracking-wider mb-2 font-bold font-serif">Estado Futuro</p>
+                        <p class="font-bold text-lg text-brand-navy" contenteditable="false" data-editable>Autoridade<br>Clientes Chegando</p>
+                    </div>
+                </div>
+
+                <p class="font-bold text-brand-navy mb-4 font-serif">Ao final deste processo, sua empresa terá:</p>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="border border-brand-grey/50 p-4 rounded-lg bg-white shadow-sm hover:shadow-md transition-shadow">
+                        <div class="bg-brand-parchment w-10 h-10 rounded-full flex items-center justify-center mb-3">
+                            <i data-lucide="crosshair" class="w-5 h-5 text-brand-navy"></i>
+                        </div>
+                        <h4 class="font-bold text-brand-navy text-sm mb-2 font-serif">Posicionamento Claro</h4>
+                        <p class="text-sm text-brand-black" contenteditable="false" data-editable>A mensagem exata sobre o porquê o seu cliente deve escolher você e ignorar a concorrência.</p>
+                    </div>
+                    <div class="border border-brand-grey/50 p-4 rounded-lg bg-white shadow-sm hover:shadow-md transition-shadow">
+                        <div class="bg-brand-parchment w-10 h-10 rounded-full flex items-center justify-center mb-3">
+                            <i data-lucide="search" class="w-5 h-5 text-brand-navy"></i>
+                        </div>
+                        <h4 class="font-bold text-brand-navy text-sm mb-2 font-serif">Ser Encontrado</h4>
+                        <p class="text-sm text-brand-black" contenteditable="false" data-editable>Presença ativa no Google, nas redes e em canais de anúncio ainda pouco disputados.</p>
+                    </div>
+                    <div class="border border-brand-grey/50 p-4 rounded-lg bg-white shadow-sm hover:shadow-md transition-shadow">
+                        <div class="bg-brand-parchment w-10 h-10 rounded-full flex items-center justify-center mb-3">
+                            <i data-lucide="layers" class="w-5 h-5 text-brand-navy"></i>
+                        </div>
+                        <h4 class="font-bold text-brand-navy text-sm mb-2 font-serif">Consistência</h4>
+                        <p class="text-sm text-brand-black" contenteditable="false" data-editable>Materiais físicos e digitais padronizados para uma jornada de compra sem atritos.</p>
+                    </div>
+                </div>
+            </section>
+
+            <div class="page-break-before"></div>
+
+            <section class="mb-12 pt-8">
+                <h2 class="text-2xl font-serif font-bold text-brand-navy mb-4 flex items-center gap-3">
+                    <span class="text-brand-gold">3.</span> A Solução & Escopo de Trabalho
+                </h2>
+                <p class="text-brand-black mb-8" contenteditable="false" data-editable>Trabalhamos com uma metodologia estruturada em etapas lógicas para garantir previsibilidade, clareza e eliminação de retrabalho.</p>
+
+                <div class="space-y-6 relative before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-brand-grey before:to-transparent">
+
+                    <!-- Fase 1 -->
+                    <div class="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active page-break-inside-avoid">
+                        <div class="flex items-center justify-center w-10 h-10 rounded-full border-4 border-brand-parchment bg-brand-navy text-brand-gold shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 font-bold z-10 font-serif">1</div>
+                        <div class="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] p-4 rounded-xl border border-brand-grey/50 bg-white shadow-sm">
+                            <h3 class="font-bold text-brand-navy mb-2 font-serif">Imersão & Estratégia</h3>
+                            <ul class="text-sm text-brand-black space-y-2 list-disc pl-4" contenteditable="false" data-editable>
+                                <li>Pesquisa profunda de briefing e alinhamento de visão comercial.</li>
+                                <li>Análise de concorrência e Proposta Única de Valor.</li>
+                                <li>Definição da personalidade da marca e tom de voz.</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Fase 2 -->
+                    <div class="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active page-break-inside-avoid">
+                        <div class="flex items-center justify-center w-10 h-10 rounded-full border-4 border-brand-parchment bg-brand-gold text-brand-navy shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 font-bold z-10 font-serif">2</div>
+                        <div class="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] p-4 rounded-xl border border-brand-grey/50 bg-white shadow-sm">
+                            <h3 class="font-bold text-brand-navy mb-2 font-serif">Identidade Visual (Design)</h3>
+                            <ul class="text-sm text-brand-black space-y-2 list-disc pl-4" contenteditable="false" data-editable>
+                                <li>Universo da Marca: Conceito central e logotipo.</li>
+                                <li>Sistema Tipográfico estratégico.</li>
+                                <li>Paleta de Cores (Digital e Impresso).</li>
+                                <li>Elementos Gráficos (Grids, patterns e ícones proprietários).</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Fase 3 -->
+                    <div class="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active page-break-inside-avoid">
+                        <div class="flex items-center justify-center w-10 h-10 rounded-full border-4 border-brand-parchment bg-brand-navy text-brand-gold shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 font-bold z-10 font-serif">3</div>
+                        <div class="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] p-4 rounded-xl border border-brand-grey/50 bg-white shadow-sm">
+                            <h3 class="font-bold text-brand-navy mb-2 font-serif">Enxoval da Marca (Aplicações)</h3>
+                            <ul class="text-sm text-brand-black space-y-2 list-disc pl-4" contenteditable="false" data-editable>
+                                <li data-module="social_setup">Digital: Kit de artes para Instagram/Facebook e assinatura de e-mail.</li>
+                                <li data-module="papelaria" class="module-hidden">Impresso: Cartão, pasta comercial, papel timbrado.</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Fase 4 -->
+                    <div class="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active page-break-inside-avoid">
+                        <div class="flex items-center justify-center w-10 h-10 rounded-full border-4 border-brand-parchment bg-brand-gold text-brand-navy shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 font-bold z-10 font-serif">4</div>
+                        <div class="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] p-4 rounded-xl border border-brand-grey/50 bg-white shadow-sm">
+                            <h3 class="font-bold text-brand-navy mb-2 font-serif">Brandbook & Entrega</h3>
+                            <ul class="text-sm text-brand-black space-y-2 list-disc pl-4" contenteditable="false" data-editable>
+                                <li>Manual técnico de regras de uso.</li>
+                                <li>Exportação em todos os formatos (.AI, .EPS, .SVG, .PDF, .PNG).</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Fase 5 - módulo digital -->
+                    <div data-module="gmb" data-module-alt="landing_page" id="fase5Block" class="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active page-break-inside-avoid">
+                        <div class="flex items-center justify-center w-10 h-10 rounded-full border-4 border-brand-parchment bg-brand-navy text-brand-gold shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 font-bold z-10 font-serif">5</div>
+                        <div class="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] p-4 rounded-xl border border-brand-grey/50 bg-white shadow-sm">
+                            <h3 class="font-bold text-brand-navy mb-2 font-serif">Presença Digital & Aquisição</h3>
+                            <ul class="text-sm text-brand-black space-y-2 list-disc pl-4" contenteditable="false" data-editable>
+                                <li data-module="gmb">Criação e otimização do Google Meu Negócio.</li>
+                                <li data-module="landing_page">Landing page com banners, copy e publicação.</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                </div>
+            </section>
+
+            <div class="page-break-before"></div>
+
+            <section class="mb-12 pt-8">
+                <h2 class="text-2xl font-serif font-bold text-brand-navy mb-4 flex items-center gap-3">
+                    <span class="text-brand-gold">4.</span> Opções de Investimento — Implantação
+                </h2>
+                <p class="text-brand-black mb-8" contenteditable="false" data-editable>Para que você escolha o nível de acompanhamento ideal para o momento atual da empresa, preparamos 3 caminhos de implementação:</p>
+
+                <div class="overflow-x-auto page-break-inside-avoid pt-5 pb-4">
+                    <table class="w-full text-sm text-left min-w-[700px] border-collapse">
+                        <thead class="text-xs text-brand-navy uppercase bg-brand-grey/30">
+                            <tr>
+                                <th scope="col" class="px-4 py-4 rounded-tl-lg font-serif">Recurso / Entregável</th>
+                                <th scope="col" class="px-4 py-4 text-center font-serif">Opção 1: Essencial</th>
+                                <th scope="col" class="px-4 py-4 text-center bg-brand-navy text-brand-gold border-b-4 border-brand-gold relative font-serif">
+                                    <span class="absolute -top-3 left-1/2 -translate-x-1/2 bg-brand-gold text-brand-navy font-bold text-[10px] px-3 py-1 rounded-full whitespace-nowrap shadow-md">Recomendada ⭐</span>
+                                    Opção 2: Estratégica
+                                </th>
+                                <th scope="col" class="px-4 py-4 text-center rounded-tr-lg font-serif">Opção 3: Dominância</th>
+                            </tr>
+                        </thead>
+                        <tbody contenteditable="false" data-editable>
+                            <tr data-module="brand_core" class="bg-white border-b border-brand-grey/50">
+                                <td class="px-4 py-3 font-medium text-brand-navy">Diagnóstico de Briefing</td>
+                                <td class="px-4 py-3 text-center text-brand-dusty">Sim <span class="block text-[11px] font-semibold mt-0.5 opacity-70">R$ 285</span></td>
+                                <td class="px-4 py-3 text-center bg-brand-parchment font-bold text-brand-navy">Sim <span class="block text-[11px] font-semibold mt-0.5 opacity-70">R$ 285</span></td>
+                                <td class="px-4 py-3 text-center text-brand-dusty">Sim <span class="block text-[11px] font-semibold mt-0.5 opacity-70">R$ 285</span></td>
+                            </tr>
+                            <tr data-module="brand_core" class="bg-brand-parchment/50 border-b border-brand-grey/50">
+                                <td class="px-4 py-3 font-medium text-brand-navy">Pesquisa de Mercado</td>
+                                <td class="px-4 py-3 text-center text-brand-dusty">Básica <span class="block text-[11px] font-semibold mt-0.5 opacity-70">R$ 350</span></td>
+                                <td class="px-4 py-3 text-center bg-white font-bold text-brand-navy">Aprofundada <span class="block text-[11px] font-semibold mt-0.5 opacity-70">R$ 300</span></td>
+                                <td class="px-4 py-3 text-center text-brand-dusty">Aprofundada <span class="block text-[11px] font-semibold mt-0.5 opacity-70">R$ 400</span></td>
+                            </tr>
+                            <tr data-module="brand_core" class="bg-white border-b border-brand-grey/50">
+                                <td class="px-4 py-3 font-medium text-brand-navy">Identidade Visual Completa</td>
+                                <td class="px-4 py-3 text-center text-brand-dusty">Sim <span class="block text-[11px] font-semibold mt-0.5 opacity-70">R$ 1.380</span></td>
+                                <td class="px-4 py-3 text-center bg-brand-parchment font-bold text-brand-navy">Sim <span class="block text-[11px] font-semibold mt-0.5 opacity-70">R$ 1.845</span></td>
+                                <td class="px-4 py-3 text-center text-brand-dusty">Sim <span class="block text-[11px] font-semibold mt-0.5 opacity-70">R$ 2.305</span></td>
+                            </tr>
+                            <tr data-module="brand_core" class="bg-brand-parchment/50 border-b border-brand-grey/50">
+                                <td class="px-4 py-3 font-medium text-brand-navy">Estratégia & Tom de Voz</td>
+                                <td class="px-4 py-3 text-center text-brand-grey">—</td>
+                                <td class="px-4 py-3 text-center bg-white font-bold text-brand-navy">Sim <span class="block text-[11px] font-semibold mt-0.5 opacity-70">R$ 260</span></td>
+                                <td class="px-4 py-3 text-center text-brand-dusty">Sim <span class="block text-[11px] font-semibold mt-0.5 opacity-70">R$ 370</span></td>
+                            </tr>
+                            <tr data-module="papelaria" class="module-hidden bg-white border-b border-brand-grey/50">
+                                <td class="px-4 py-3 font-medium text-brand-navy">Kit Papelaria Física</td>
+                                <td class="px-4 py-3 text-center text-brand-dusty">Sim <span class="block text-[11px] font-semibold mt-0.5 opacity-70">R$ 310</span></td>
+                                <td class="px-4 py-3 text-center bg-brand-parchment font-bold text-brand-navy">Sim <span class="block text-[11px] font-semibold mt-0.5 opacity-70">R$ 440</span></td>
+                                <td class="px-4 py-3 text-center text-brand-dusty">Sim <span class="block text-[11px] font-semibold mt-0.5 opacity-70">R$ 575</span></td>
+                            </tr>
+                            <tr data-module="social_setup" class="bg-brand-parchment/50 border-b border-brand-grey/50">
+                                <td class="px-4 py-3 font-medium text-brand-navy">Perfis Instagram/Facebook + Templates</td>
+                                <td class="px-4 py-3 text-center text-brand-dusty">3 peças <span class="block text-[11px] font-semibold mt-0.5 opacity-70">R$ 420</span></td>
+                                <td class="px-4 py-3 text-center bg-white font-bold text-brand-navy">8 peças <span class="block text-[11px] font-semibold mt-0.5 opacity-70">R$ 590</span></td>
+                                <td class="px-4 py-3 text-center text-brand-dusty">15 peças <span class="block text-[11px] font-semibold mt-0.5 opacity-70">R$ 760</span></td>
+                            </tr>
+                            <tr data-module="gmb" class="bg-white border-b border-brand-grey/50">
+                                <td class="px-4 py-3 font-medium text-brand-navy">Google Meu Negócio</td>
+                                <td class="px-4 py-3 text-center text-brand-dusty">Sim <span class="block text-[11px] font-semibold mt-0.5 opacity-70">R$ 115</span></td>
+                                <td class="px-4 py-3 text-center bg-brand-parchment font-bold text-brand-navy">Sim <span class="block text-[11px] font-semibold mt-0.5 opacity-70">R$ 155</span></td>
+                                <td class="px-4 py-3 text-center text-brand-dusty">Sim <span class="block text-[11px] font-semibold mt-0.5 opacity-70">R$ 190</span></td>
+                            </tr>
+                            <tr data-module="landing_page" class="bg-brand-parchment/50 border-b border-brand-grey/50">
+                                <td class="px-4 py-3 font-medium text-brand-navy">Landing Page (site 1 página)</td>
+                                <td class="px-4 py-3 text-center text-brand-dusty">Design + Publ. <span class="block text-[11px] font-semibold mt-0.5 opacity-70">R$ 920</span></td>
+                                <td class="px-4 py-3 text-center bg-white font-bold text-brand-navy">Design + Dev <span class="block text-[11px] font-semibold mt-0.5 opacity-70">R$ 1.265</span></td>
+                                <td class="px-4 py-3 text-center text-brand-dusty">Completo <span class="block text-[11px] font-semibold mt-0.5 opacity-70">R$ 1.610</span></td>
+                            </tr>
+                            <tr data-module="website_institucional" class="module-hidden bg-white border-b border-brand-grey/50">
+                                <td class="px-4 py-3 font-medium text-brand-navy">Website Institucional (multipáginas) <span class="text-[10px] text-brand-copper font-bold uppercase">Upsell</span></td>
+                                <td class="px-4 py-3 text-center text-brand-dusty">Básico <span class="block text-[11px] font-semibold mt-0.5 opacity-70">R$ 1.995</span></td>
+                                <td class="px-4 py-3 text-center bg-brand-parchment font-bold text-brand-navy">Intermediário <span class="block text-[11px] font-semibold mt-0.5 opacity-70">R$ 2.995</span></td>
+                                <td class="px-4 py-3 text-center text-brand-dusty">Completo <span class="block text-[11px] font-semibold mt-0.5 opacity-70">R$ 3.995</span></td>
+                            </tr>
+                            <tr data-module="brand_core" class="bg-white border-b border-brand-grey/50">
+                                <td class="px-4 py-3 font-medium text-brand-navy">Brandbook</td>
+                                <td class="px-4 py-3 text-center text-brand-dusty">Resumido <span class="block text-[11px] font-semibold mt-0.5 opacity-70">R$ 460</span></td>
+                                <td class="px-4 py-3 text-center bg-brand-parchment font-bold text-brand-navy">Completo <span class="block text-[11px] font-semibold mt-0.5 opacity-70">R$ 615</span></td>
+                                <td class="px-4 py-3 text-center text-brand-dusty">Completo <span class="block text-[11px] font-semibold mt-0.5 opacity-70">R$ 770</span></td>
+                            </tr>
+                            <tr data-module="brand_core" class="bg-brand-parchment/50 border-b border-brand-grey/50">
+                                <td class="px-4 py-3 font-medium text-brand-navy">Suporte Pós-Entrega</td>
+                                <td class="px-4 py-3 text-center text-brand-dusty">15 dias <span class="block text-[11px] font-semibold mt-0.5 opacity-70 text-brand-copper">Incluso</span></td>
+                                <td class="px-4 py-3 text-center bg-white font-bold text-brand-copper">30 dias <span class="block text-[11px] font-semibold mt-0.5 opacity-70">Incluso</span></td>
+                                <td class="px-4 py-3 text-center text-brand-dusty">60 dias <span class="block text-[11px] font-semibold mt-0.5 opacity-70 text-brand-copper">Incluso</span></td>
+                            </tr>
+                            <tr class="bg-brand-navy text-brand-parchment border-b border-brand-navy">
+                                <td class="px-4 py-5 font-bold uppercase tracking-wider rounded-bl-lg font-serif">Investimento</td>
+                                <td class="px-4 py-5 text-center text-lg font-semibold text-brand-azure"><span id="invEssencial">R$ 0</span></td>
+                                <td class="px-4 py-5 text-center text-2xl font-bold bg-brand-gold text-brand-navy relative font-serif">
+                                    <div class="absolute inset-0 border-2 border-brand-navy/20"></div>
+                                    <span id="invEstrategica">R$ 0</span>
+                                </td>
+                                <td class="px-4 py-5 text-center text-lg font-semibold text-brand-azure rounded-br-lg"><span id="invDominancia">R$ 0</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="bg-brand-gold/10 p-4 rounded-lg mt-4 text-sm text-brand-navy border border-brand-gold/30">
+                    <strong class="font-bold">Nota de Ancoragem:</strong> A <span class="underline decoration-brand-copper decoration-2">Opção Estratégica</span> é a escolha da maioria dos nossos clientes por entregar o equilíbrio exato entre diferenciação comercial e construção de autoridade contínua.
+                </div>
+            </section>
+
+            <!-- SEÇÃO 4.5 — GESTÃO MENSAL / TRÁFEGO -->
+            <section id="monthlySection" class="mb-12 pt-4 page-break-inside-avoid">
+                <h2 class="text-2xl font-serif font-bold text-brand-navy mb-4 flex items-center gap-3">
+                    <span class="text-brand-gold">4.1</span> Gestão Mensal & Aquisição de Clientes
+                </h2>
+                <p class="text-brand-black mb-6" contenteditable="false" data-editable>Módulos recorrentes, contratados à parte da implantação, para manter a marca ativa e gerando novos contatos todo mês.</p>
+
+                <div class="overflow-x-auto pb-2">
+                    <table class="w-full text-sm text-left border-collapse">
+                        <thead class="text-xs text-brand-navy uppercase bg-brand-grey/30">
+                            <tr>
+                                <th class="px-4 py-3 rounded-tl-lg font-serif">Serviço</th>
+                                <th class="px-4 py-3 font-serif">Descrição</th>
+                                <th class="px-4 py-3 text-center rounded-tr-lg font-serif">Mensalidade</th>
+                            </tr>
+                        </thead>
+                        <tbody contenteditable="false" data-editable>
+                            <tr data-module="gestao_redes" class="bg-white border-b border-brand-grey/50">
+                                <td class="px-4 py-3 font-medium text-brand-navy">Assessoria Mensal de Design & Redes</td>
+                                <td class="px-4 py-3 text-brand-black">Postagens + artes mensais + relatório de desempenho (~20h/mês)</td>
+                                <td class="px-4 py-3 text-center font-semibold text-brand-navy">R$ 770</td>
+                            </tr>
+                            <tr data-module="trafego_google" class="bg-brand-parchment/50 border-b border-brand-grey/50">
+                                <td class="px-4 py-3 font-medium text-brand-navy">Tráfego Pago — Google Ads</td>
+                                <td class="px-4 py-3 text-brand-black">Fee de gestão de campanhas (verba de mídia à parte)</td>
+                                <td class="px-4 py-3 text-center font-semibold text-brand-navy">R$ 420</td>
+                            </tr>
+                            <tr data-module="trafego_meta" class="module-hidden bg-white border-b border-brand-grey/50">
+                                <td class="px-4 py-3 font-medium text-brand-navy">Tráfego Pago — Meta Ads</td>
+                                <td class="px-4 py-3 text-brand-black">Fee de gestão de campanhas (verba de mídia à parte)</td>
+                                <td class="px-4 py-3 text-center font-semibold text-brand-navy">R$ 420</td>
+                            </tr>
+                            <tr data-module="ads_ia" class="bg-brand-gold/10 border-b border-brand-grey/50">
+                                <td class="px-4 py-3 font-medium text-brand-navy flex items-center gap-1">Ads de IA (ChatGPT Ads) <i data-lucide="sparkles" class="w-3 h-3 text-brand-copper"></i></td>
+                                <td class="px-4 py-3 text-brand-black">Fee de gestão do canal pioneiro (verba de mídia à parte)</td>
+                                <td class="px-4 py-3 text-center font-semibold text-brand-navy">R$ 550</td>
+                            </tr>
+                            <tr class="bg-brand-navy text-brand-parchment">
+                                <td colspan="2" class="px-4 py-4 font-bold uppercase tracking-wider rounded-bl-lg font-serif">Total Mensalidade de Gestão</td>
+                                <td class="px-4 py-4 text-center text-lg font-bold text-brand-gold rounded-br-lg"><span id="totalMensal">R$ 0</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Callout Ads de IA -->
+                <div data-module="ads_ia" class="mt-6 bg-brand-navy text-brand-parchment p-6 rounded-xl shadow-lg relative overflow-hidden">
+                    <div class="absolute -right-4 -top-4 opacity-10">
+                        <i data-lucide="sparkles" class="w-32 h-32 text-brand-gold"></i>
+                    </div>
+                    <h3 class="font-bold text-brand-gold mb-2 text-lg relative z-10 flex items-center gap-2 font-serif">
+                        <i data-lucide="rocket" class="w-5 h-5"></i> Diferencial: Anúncios em IA
+                    </h3>
+                    <p class="text-sm text-brand-parchment/85 leading-relaxed relative z-10" contenteditable="false" data-editable>
+                        Os anúncios dentro do ChatGPT chegaram ao Brasil em 2026 e ainda estão em fase inicial: poucos anunciantes disputando espaço significa custo de exibição mais baixo agora do que daqui a um ano. Ser um dos primeiros negócios da região a estar presente nesse canal é uma vantagem competitiva real — e temporária.
+                    </p>
+                </div>
+
+                <!-- Verba de mídia -->
+                <div data-module="trafego_google" data-module-alt="trafego_meta" data-module-alt2="ads_ia" class="mt-6 bg-white/70 border border-brand-grey/50 p-5 rounded-lg">
+                    <h4 class="font-bold text-brand-navy mb-2 text-sm font-serif flex items-center gap-2">
+                        <i data-lucide="pie-chart" class="w-4 h-4 text-brand-gold"></i> Verba de Mídia (investimento em anúncios)
+                    </h4>
+                    <p class="text-sm text-brand-black mb-3" contenteditable="false" data-editable>
+                        Este valor é investido diretamente nas plataformas (Google, Meta e OpenAI) e <strong>não é receita da agência</strong> — soma-se à mensalidade de gestão acima. Sugestão inicial de distribuição estratégica de baixo custo:
+                    </p>
+                    <ul class="text-sm text-brand-black grid grid-cols-3 gap-3 text-center" contenteditable="false" data-editable>
+                        <li class="bg-brand-parchment rounded p-2"><strong class="block text-brand-navy">Google Ads</strong>~40%</li>
+                        <li class="bg-brand-parchment rounded p-2"><strong class="block text-brand-navy">Meta Ads</strong>~35%</li>
+                        <li class="bg-brand-parchment rounded p-2"><strong class="block text-brand-navy">Ads de IA</strong>~25%</li>
+                    </ul>
+                    <p class="text-xs text-brand-dusty mt-3">Verba inicial sugerida: R$ 800 a R$ 1.500/mês, ajustável conforme resultado.</p>
+                </div>
+            </section>
+
+            <section class="mb-12 page-break-inside-avoid">
+                <h2 class="text-2xl font-serif font-bold text-brand-navy mb-4 flex items-center gap-3">
+                    <span class="text-brand-gold">5.</span> Condições de Pagamento & Garantia
+                </h2>
+
+                <div class="grid md:grid-cols-2 gap-8">
+                    <div>
+                        <p class="text-brand-black mb-4 text-sm" contenteditable="false" data-editable>Facilitamos a condição comercial para que o investimento de implantação seja absorvido pelo fluxo de caixa do seu negócio:</p>
+                        <ul class="space-y-3" contenteditable="false" data-editable>
+                            <li class="flex items-center gap-3 bg-white p-3 rounded shadow-sm border border-brand-grey/50">
+                                <i data-lucide="check-circle-2" class="w-5 h-5 text-brand-azure"></i>
+                                <span class="text-sm text-brand-navy"><strong>Opção A (À vista):</strong> 5% de desconto via PIX no aceite.</span>
+                            </li>
+                            <li class="flex items-center gap-3 bg-white p-3 rounded shadow-sm border border-brand-grey/50">
+                                <i data-lucide="check-circle-2" class="w-5 h-5 text-brand-gold"></i>
+                                <span class="text-sm text-brand-navy"><strong>Opção B (Padrão):</strong> 50% entrada e 50% na entrega.</span>
+                            </li>
+                            <li class="flex items-center gap-3 bg-white p-3 rounded shadow-sm border border-brand-grey/50">
+                                <i data-lucide="check-circle-2" class="w-5 h-5 text-brand-dusty"></i>
+                                <span class="text-sm text-brand-navy"><strong>Opção C (Parcelado):</strong> Entrada 30% + saldo em até 4x no cartão.</span>
+                            </li>
+                            <li data-module="gestao_redes" data-module-alt="trafego_google" data-module-alt2="trafego_meta" data-module-alt3="ads_ia" class="flex items-center gap-3 bg-brand-parchment p-3 rounded shadow-sm border border-brand-gold/40">
+                                <i data-lucide="info" class="w-5 h-5 text-brand-copper"></i>
+                                <span class="text-sm text-brand-navy"><strong>Gestão mensal:</strong> cobrada à parte, com fidelidade mínima de 3 meses.</span>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div class="bg-brand-navy text-brand-parchment p-6 rounded-xl shadow-lg relative overflow-hidden">
+                        <div class="absolute -right-4 -top-4 opacity-10">
+                            <i data-lucide="shield-check" class="w-32 h-32 text-brand-gold"></i>
+                        </div>
+                        <h3 class="font-bold text-brand-gold mb-2 text-lg relative z-10 flex items-center gap-2 font-serif">
+                            <i data-lucide="shield" class="w-5 h-5"></i> Garantia de Processo
+                        </h3>
+                        <p class="text-sm text-brand-parchment/80 leading-relaxed relative z-10" contenteditable="false" data-editable>
+                            Garantimos que o projeto será executado estritamente dentro da metodologia apresentada. Todas as etapas de criação passam por validações intermediárias com protótipos reais (mockups) para assegurar que a entrega final esteja 100% alinhada à expectativa e ao objetivo estratégico do negócio.
+                        </p>
+                    </div>
+                </div>
+            </section>
+
+            <div class="grid md:grid-cols-2 gap-12 page-break-inside-avoid">
+                <section>
+                    <h2 class="text-xl font-serif font-bold text-brand-navy mb-4 flex items-center gap-2">
+                        <span class="text-brand-gold">6.</span> Cronograma
+                    </h2>
+                    <table class="w-full text-sm text-left">
+                        <thead class="text-xs text-brand-navy uppercase border-b-2 border-brand-navy">
+                            <tr>
+                                <th scope="col" class="py-2">Etapa</th>
+                                <th scope="col" class="py-2 text-right">Prazo Estimado</th>
+                            </tr>
+                        </thead>
+                        <tbody contenteditable="false" data-editable class="text-brand-black divide-y divide-brand-grey/50">
+                            <tr>
+                                <td class="py-2">01. Contrato + Briefing</td>
+                                <td class="py-2 text-right font-medium text-brand-navy">Dia 0</td>
+                            </tr>
+                            <tr>
+                                <td class="py-2">02. Imersão e Diagnóstico</td>
+                                <td class="py-2 text-right font-medium text-brand-navy">Até 3 dias</td>
+                            </tr>
+                            <tr>
+                                <td class="py-2">03. Estratégia Visual</td>
+                                <td class="py-2 text-right font-medium text-brand-navy">10 a 12 dias</td>
+                            </tr>
+                            <tr>
+                                <td class="py-2">04. Materiais de Enxoval</td>
+                                <td class="py-2 text-right font-medium text-brand-navy">5 a 7 dias</td>
+                            </tr>
+                            <tr data-module="gmb" data-module-alt="landing_page" data-module-alt2="social_setup">
+                                <td class="py-2">05. Presença Digital (GMB, Redes, LP)</td>
+                                <td class="py-2 text-right font-medium text-brand-navy">4 a 6 dias</td>
+                            </tr>
+                            <tr>
+                                <td class="py-2">06. Brandbook e Entrega</td>
+                                <td class="py-2 text-right font-medium text-brand-navy">3 dias</td>
+                            </tr>
+                            <tr data-module="gestao_redes" data-module-alt="trafego_google" data-module-alt2="trafego_meta" data-module-alt3="ads_ia">
+                                <td class="py-2">07. Início da Gestão Mensal</td>
+                                <td class="py-2 text-right font-medium text-brand-navy">A partir do mês seguinte</td>
+                            </tr>
+                            <tr class="text-brand-navy font-bold border-t-2 border-brand-gold bg-brand-gold/10">
+                                <td class="py-3 px-2">Total Estimado (implantação)</td>
+                                <td class="py-3 px-2 text-right text-brand-copper">~25 a 30 dias úteis</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </section>
+
+                <section>
+                    <h2 class="text-xl font-serif font-bold text-brand-navy mb-4 flex items-center gap-2">
+                        <span class="text-brand-gold">7.</span> Próximos Passos
+                    </h2>
+                    <div class="bg-white border border-brand-grey/50 p-5 rounded-lg shadow-sm">
+                        <p class="text-sm text-brand-black mb-4" contenteditable="false" data-editable>
+                            <strong>Validade:</strong> Para garantir a alocação da nossa equipe, esta proposta é válida por <strong class="text-brand-copper">7 dias corridos</strong>. Após esse período, estará sujeita a reajuste.
+                        </p>
+                        <h4 class="font-bold text-brand-navy mb-3 text-sm font-serif">Como aprovar?</h4>
+                        <ol class="text-sm text-brand-black space-y-2 list-decimal pl-4 font-medium" contenteditable="false" data-editable>
+                            <li>Escolha a opção de investimento desejada.</li>
+                            <li>Responda confirmando a escolha e forma de pagamento.</li>
+                            <li>Enviaremos o contrato digital em até 24 horas.</li>
+                        </ol>
+                    </div>
+                </section>
+            </div>
+
+        <footer class="mt-16 pt-8 border-t border-brand-grey/50 flex flex-col md:flex-row justify-between items-center gap-6 page-break-inside-avoid">
+                <div class="text-center md:text-left flex items-center gap-4">
+                    <img src="logo.png" alt="Logo Elias" class="h-10 object-contain hidden md:block">
+                  
+                </div>
+                <div class="flex flex-col gap-1 text-sm text-brand-dusty text-center md:text-right font-medium" contenteditable="false" data-editable>
+                    <a href="#" class="flex items-center justify-center md:justify-end gap-2 hover:text-brand-copper transition-colors">
+                        <i data-lucide="message-circle" class="w-4 h-4 text-brand-gold"></i> [Seu WhatsApp]
+                    </a>
+                    <a href="#" class="flex items-center justify-center md:justify-end gap-2 hover:text-brand-copper transition-colors">
+                        <i data-lucide="mail" class="w-4 h-4 text-brand-gold"></i> [Seu E-mail]
+                    </a>
+                    <a href="#" class="flex items-center justify-center md:justify-end gap-2 hover:text-brand-copper transition-colors">
+                        <i data-lucide="globe" class="w-4 h-4 text-brand-gold"></i> [Seu Portfólio/Site]
+                    </a>
+                </div>
+            </footer>
+        </div>
+    </main>
+
+    <script>
+        lucide.createIcons();
+
+        let isEditable = false;
+
+        function toggleEditMode() {
+            isEditable = !isEditable;
+            const editableElements = document.querySelectorAll('[data-editable]');
+            const btnText = document.getElementById('editBtnText');
+            const toggleBtn = document.getElementById('toggleEditBtn');
+            const docContainer = document.getElementById('proposalDocument');
+
+            editableElements.forEach(el => el.setAttribute('contenteditable', isEditable));
+
+            if (isEditable) {
+                btnText.innerText = "Concluir Edição";
+                toggleBtn.classList.replace('bg-brand-dusty', 'bg-brand-azure');
+                toggleBtn.classList.replace('border-brand-dusty', 'border-brand-azure');
+                toggleBtn.classList.replace('hover:bg-brand-navy', 'hover:bg-brand-dusty');
+                docContainer.classList.add('editable-active');
+            } else {
+                btnText.innerText = "Ativar Edição";
+                toggleBtn.classList.replace('bg-brand-azure', 'bg-brand-dusty');
+                toggleBtn.classList.replace('border-brand-azure', 'border-brand-dusty');
+                toggleBtn.classList.replace('hover:bg-brand-dusty', 'hover:bg-brand-navy');
+                docContainer.classList.remove('editable-active');
+            }
+        }
+
+        function toggleModulePanel() {
+            document.getElementById('modulePanel').classList.toggle('open');
+            document.getElementById('panelOverlay').classList.toggle('hidden');
+        }
+
+        // ---- SISTEMA DE MÓDULOS ----
+        // tiers: [Essencial, Estratégica, Dominância] | null = não disponível nesse tier
+        // Preços derivados de: Preço = Horas x CHT x Fator de Risco
+        // CHT (Custo da Hora Técnica) = R$ 4.300 (custos fixos) / 112h vendáveis/mês = R$ 38,39/h
+        // Essencial = horas mínimas | Estratégica = horas médias | Dominância = horas máximas
+        const MODULES = {
+            papelaria:            { group: 'setup', tiers: [310, 440, 575] },
+            social_setup:         { group: 'setup', tiers: [420, 590, 760] },
+            gmb:                  { group: 'setup', tiers: [115, 155, 190] },
+            landing_page:         { group: 'setup', tiers: [920, 1265, 1610] },
+            website_institucional:{ group: 'setup', tiers: [1995, 2995, 3995] },
+            gestao_redes:         { group: 'mensal', monthly: 770 },
+            trafego_google:       { group: 'mensal', monthly: 420 },
+            trafego_meta:         { group: 'mensal', monthly: 420 },
+            ads_ia:               { group: 'mensal', monthly: 550 },
+        };
+        // Estratégia+Diagnóstico + Identidade Visual + Brandbook
+        const BRAND_CORE_TIERS = [2475, 3305, 4130];
+
+        const state = {};
+        Object.keys(MODULES).forEach(id => state[id] = true);
+        state.website_institucional = false; // upsell opcional, desativado por padrão
+        state.papelaria = false;              // enxugado: prioridade é presença digital
+        state.trafego_meta = false;           // enxugado: fase 2, após validar Google + Ads de IA
+
+        function fmt(n) {
+            return 'R$ ' + n.toLocaleString('pt-BR');
+        }
+
+        function toggleModule(id, checked) {
+            state[id] = checked;
+
+            document.querySelectorAll('[data-module="' + id + '"], [data-module-alt="' + id + '"], [data-module-alt2="' + id + '"], [data-module-alt3="' + id + '"]')
+                .forEach(el => {
+                    // Elemento pode depender de vários módulos (data-module / data-module-alt...): mostra se QUALQUER um dos módulos referenciados estiver ativo
+                    const refs = [el.getAttribute('data-module'), el.getAttribute('data-module-alt'), el.getAttribute('data-module-alt2'), el.getAttribute('data-module-alt3')].filter(Boolean);
+                    const anyActive = refs.some(refId => state[refId]);
+                    el.classList.toggle('module-hidden', !anyActive);
+                });
+
+            recomputeTotals();
+        }
+
+        function recomputeTotals() {
+            const totals = [...BRAND_CORE_TIERS];
+            Object.keys(MODULES).forEach(id => {
+                const mod = MODULES[id];
+                if (mod.group !== 'setup' || !state[id]) return;
+                mod.tiers.forEach((price, i) => {
+                    if (price) totals[i] += price;
+                });
+            });
+
+            document.getElementById('invEssencial').textContent = fmt(totals[0]);
+            document.getElementById('invEstrategica').textContent = fmt(totals[1]);
+            document.getElementById('invDominancia').textContent = fmt(totals[2]);
+            document.getElementById('summaryEssencial').textContent = fmt(totals[0]);
+            document.getElementById('summaryEstrategica').textContent = fmt(totals[1]);
+            document.getElementById('summaryDominancia').textContent = fmt(totals[2]);
+
+            let monthlyTotal = 0;
+            let anyMonthly = false;
+            Object.keys(MODULES).forEach(id => {
+                const mod = MODULES[id];
+                if (mod.group !== 'mensal') return;
+                if (state[id]) {
+                    monthlyTotal += mod.monthly;
+                    anyMonthly = true;
+                }
+            });
+            document.getElementById('totalMensal').textContent = fmt(monthlyTotal) + (monthlyTotal ? '' : '');
+            document.getElementById('summaryMensal').textContent = fmt(monthlyTotal) + '/mês';
+
+            document.getElementById('monthlySection').classList.toggle('module-hidden', !anyMonthly);
+        }
+
+        recomputeTotals();
+    </script>
+</body>
+</html>
